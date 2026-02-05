@@ -1,0 +1,8 @@
+{
+  "vnodes": 128,
+  "nodes": [
+    { "id": "n1", "host": "localhost", "port": 9001 },
+    { "id": "n2", "host": "localhost", "port": 9002 },
+    { "id": "n3", "host": "localhost", "port": 9003 }
+  ]
+}
