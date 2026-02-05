@@ -75,7 +75,4 @@ n3 localhost 9003
 
 > Note: This project intentionally uses a tiny JSON parser (regex-based) for a narrow schema to keep the repo self-contained.
 
-## What to put on your resume
-- “Built a C++17 client SDK + CLI for a Dynamo-style KV store; implemented consistent-hash routing, timeouts, and retries.”
-- “Configured CMake builds for clang/gcc; added ASan/UBSan builds in CI to catch memory and UB issues early.”
-- “Wrote unit tests and automated them in CI (GitHub Actions / Jenkinsfile).”
+
