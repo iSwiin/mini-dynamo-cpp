@@ -1,78 +1,83 @@
 # mini-dynamo-cpp
 
-A small C++17 client library + CLI (`dynamoctl`) for the Mini Dynamo Go cluster.
+This project is a C++17 client + CLI for my mini dynamo cluster. 
 
-This repo is designed to hit the job-posting requirements:
-- C++ project using **CMake**
-- Builds on Linux with **clang/gcc**
-- Runs tests under **sanitizers** in CI (ASan/UBSan)
-- Shows “production discipline”: retries, timeouts, tests, CI
+I built this to make it easy to interact with my mini dynamo cluster from C++. It’s a small client library and a CLI for basic operations (health checks, put/get). 
+It also includes a test setup so the project is easy to run and verify on Linux.
 
-## What it does
-- `libdynamo_client`: C++ client that can `PUT` and `GET` keys from a Mini Dynamo cluster
-- `dynamoctl`: CLI for quick interaction (put/get/health)
+---
 
-The client implements simple routing using a consistent-hash ring (primary node first), and falls back to other nodes if the primary fails.
+## What’s in here
 
-## Prereqs
-- CMake >= 3.20
-- A C++17 compiler (clang or gcc)
-- libcurl development headers
+- **`dynamo_client` (library):** a small C++ client you can embed in other programs.
+- **`dynamoctl` (CLI):** a command-line tool for `health`, `put`, `get` (and whatever else you add later).
+- **Build system:** CMake.
+- **Tests:** unit tests via `ctest`.
+- **CI:** builds with clang + gcc and runs with ASan/UBSan.
 
-On Ubuntu:
+---
+## Requirements
+
+This is easiest on Linux. On Windows, I build it in WSL Ubuntu.
+
+### Ubuntu / WSL packages
 ```bash
 sudo apt-get update
 sudo apt-get install -y cmake g++ clang libcurl4-openssl-dev
 ```
 
-## Build + test (Linux/macOS)
+## Quick start
+
+### 1) Start the Mini Dynamo cluster (Go project)
+
+In your Go Mini Dynamo repo (the one with `docker-compose.yml`):
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+You should have **3 nodes** up (`n1`/`n2`/`n3`).
+
+### 2) Build this repo
+
+From the `mini-dynamo-cpp` repo root:
+
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_ASAN=ON -DENABLE_UBSAN=ON
 cmake --build build -j
 ctest --test-dir build --output-on-failure
 ```
 
-## Run against your Mini Dynamo cluster
-Start your Go cluster (from your Go repo):
-```bash
-docker compose up -d --build
-```
+### 3) Run the CLI
 
-Then from this repo:
 ```bash
 ./build/dynamoctl health
 ./build/dynamoctl put hello world
 ./build/dynamoctl get hello
 ```
 
+If your cluster is running, `health` should show **200s** and `get` should return `world`.
+
 ## Config
-By default, `dynamoctl` looks for `nodes.docker.json` in the current directory.
-If it doesn't exist, it falls back to `localhost:9001-9003`.
 
-You can pass a config:
-```bash
-./build/dynamoctl --config nodes.local.json put k v
+By default the CLI reads a simple JSON config (`nodes.local.json`) that points at:
+
+- `http://localhost:9001`
+- `http://localhost:9002`
+- `http://localhost:9003`
+
+If you move ports or run a different setup, update the config file (or pass a different one if you add that flag).
+
+## Project layout (roughly)
+
+```makefile
+include/     # public headers
+src/         # library implementation
+tools/       # CLI (dynamoctl)
+tests/       # unit tests
+cmake/       # CMake helpers (sanitizers)
+.github/     # CI workflow
+Jenkinsfile  # Jenkins pipeline (mirrors CI)
 ```
-
-Supported formats:
-
-### Minimal JSON
-```json
-{ "vnodes": 128, "nodes": [
-  { "id": "n1", "host": "localhost", "port": 9001 },
-  { "id": "n2", "host": "localhost", "port": 9002 },
-  { "id": "n3", "host": "localhost", "port": 9003 }
-]}
-```
-
-### Minimal text
-```txt
-vnodes=128
-n1 localhost 9001
-n2 localhost 9002
-n3 localhost 9003
-```
-
-> Note: This project intentionally uses a tiny JSON parser (regex-based) for a narrow schema to keep the repo self-contained.
-
 
